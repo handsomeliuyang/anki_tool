@@ -112,7 +112,7 @@ class _AnkiReadState extends State<AnkiRead> {
                                 _MultiPinyinShowView(this.multiWords),
                                 const SizedBox(height: 8,),
                                 _MutiPinyinView(
-                                    multiWords: this.multiWords,
+                                    words: this.words,
                                     mutiPinyinController: this.mutiPinyinController,
                                     onTapUpdateMultiPinyin: this._updateMutilPinyin,
                                 ),
@@ -326,12 +326,13 @@ class _MultiPinyinShowView extends StatelessWidget {
 
 class _MutiPinyinView extends StatelessWidget {
 
-    final List<String> multiWords;
+//    final List<String> multiWords;
+    final List<_WordData> words;
     final TextEditingController mutiPinyinController;
     final VoidCallback onTapUpdateMultiPinyin;
 
     _MutiPinyinView({
-        this.multiWords,
+        this.words,
         this.mutiPinyinController,
         this.onTapUpdateMultiPinyin
     });
@@ -339,7 +340,11 @@ class _MutiPinyinView extends StatelessWidget {
     @override
     Widget build(BuildContext context) {
 
-        mutiPinyinController.text = multiWords.join('\n');
+        mutiPinyinController.text = words
+            .where((element) => element.pinyins.length > 1)
+            .map((wordData) => '${wordData.word}=${wordData.pinyins.join(',')}')
+            .toSet()
+            .join('\n');
 
         return Card(
             color: Color(0x03FEFEFE),
