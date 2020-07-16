@@ -15,6 +15,7 @@ class AnkiRead extends StatefulWidget {
 class _AnkiReadState extends State<AnkiRead> {
 
     List<_WordData> words = [];
+    List<String> multiWords = [];
     int rowNum = 10;
 
     final rowNumController = TextEditingController();
@@ -52,6 +53,12 @@ class _AnkiReadState extends State<AnkiRead> {
                 pinyins: PinyinHelper.convertToPinyinArray(char, PinyinFormat.WITH_TONE_MARK)
             ));
         }
+
+        multiWords = list
+            .where((element) => element.pinyins.length > 1)
+            .map((wordData) => '${wordData.word}=${wordData.pinyins.join(',')}')
+            .toSet()
+            .toList();
         this.words = list;
         this.rowNum = rowNum;
         setState(() {});
@@ -101,8 +108,11 @@ class _AnkiReadState extends State<AnkiRead> {
                                 ),
                                 const SizedBox(height: 8),
                                 _PinyinView(this.words),
+                                const SizedBox(height: 8,),
+                                _MultiPinyinShowView(this.multiWords),
+                                const SizedBox(height: 8,),
                                 _MutiPinyinView(
-                                    words: this.words,
+                                    multiWords: this.multiWords,
                                     mutiPinyinController: this.mutiPinyinController,
                                     onTapUpdateMultiPinyin: this._updateMutilPinyin,
                                 ),
@@ -248,14 +258,80 @@ class _PinyinView extends StatelessWidget {
     }
 }
 
+class _MultiPinyinShowView extends StatelessWidget {
+
+    final List<String> multiWords;
+
+    _MultiPinyinShowView(this.multiWords);
+
+    void _showSnackBarOnCopySuccess(BuildContext context, dynamic result) {
+        Scaffold.of(context).showSnackBar(
+            SnackBar(
+                content: Text('拼音复制成功'),
+            ),
+        );
+    }
+
+    void _showSnackBarOnCopyFailure(BuildContext context, Object exception) {
+        Scaffold.of(context).showSnackBar(
+            SnackBar(
+                content: Text('拼音复制失败'),
+            ),
+        );
+    }
+
+    @override
+    Widget build(BuildContext context) {
+
+        String pinyins = multiWords.join(' ');
+
+        return Card(
+            color: Color(0x03FEFEFE),
+            child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                        Row(
+                            children: [
+                                RaisedButton(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(4)),
+                                    ),
+                                    onPressed: () async {
+                                        await Clipboard.setData(
+                                            ClipboardData(text: pinyins))
+                                            .then((dynamic result)=>_showSnackBarOnCopySuccess(context, result))
+                                            .catchError((dynamic result)=>_showSnackBarOnCopyFailure(context, result));
+                                    },
+                                    child: Text('全部复制'),
+                                ),
+                            ],
+                        ),
+                        Text(
+                            pinyins,
+                            style: TextStyle(
+                                backgroundColor: Colors.black12,
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+        );
+    }
+}
+
 class _MutiPinyinView extends StatelessWidget {
 
-    final List<_WordData> words;
+    final List<String> multiWords;
     final TextEditingController mutiPinyinController;
     final VoidCallback onTapUpdateMultiPinyin;
 
     _MutiPinyinView({
-        this.words,
+        this.multiWords,
         this.mutiPinyinController,
         this.onTapUpdateMultiPinyin
     });
@@ -263,11 +339,7 @@ class _MutiPinyinView extends StatelessWidget {
     @override
     Widget build(BuildContext context) {
 
-        mutiPinyinController.text = words
-            .where((element) => element.pinyins.length > 1)
-            .map((wordData) => '${wordData.word}=${wordData.pinyins.join(',')}')
-            .toList()
-            .join('\n');
+        mutiPinyinController.text = multiWords.join('\n');
 
         return Card(
             color: Color(0x03FEFEFE),
@@ -329,6 +401,7 @@ class _ResultView extends StatelessWidget {
     Widget build(BuildContext context) {
 
         String htmlTable = toHtmlTable(words, rowNum);
+        String htmlTableAndStyle = style + '\n' + htmlTable;
 
         return Card(
             color: Color(0x03FEFEFE),
@@ -349,16 +422,31 @@ class _ResultView extends StatelessWidget {
                                         ),
                                         onPressed: () async {
                                             await Clipboard.setData(
-                                                ClipboardData(text: htmlTable))
+                                                ClipboardData(text: htmlTableAndStyle))
                                                 .then((dynamic result)=>_showSnackBarOnCopySuccess(context, result))
                                                 .catchError((dynamic result)=>_showSnackBarOnCopyFailure(context, result));
                                         },
                                         child: Text('全部复制'),
                                     ),
+                                    const SizedBox(width: 12,),
+                                    RaisedButton(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        shape: const RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(4)),
+                                        ),
+                                        onPressed: () async {
+                                            await Clipboard.setData(
+                                                ClipboardData(text: htmlTable))
+                                                .then((dynamic result)=>_showSnackBarOnCopySuccess(context, result))
+                                                .catchError((dynamic result)=>_showSnackBarOnCopyFailure(context, result));
+                                        },
+                                        child: Text('复制表格'),
+                                    ),
                                 ],
                             ),
                             HighlightView(
-                                htmlTable,
+                                htmlTableAndStyle,
                                 language: 'html',
                                 theme: githubTheme,
                                 padding: const EdgeInsets.all(12),
@@ -373,6 +461,28 @@ class _ResultView extends StatelessWidget {
             ),
         );
     }
+
+    static const style = '''
+<style>
+    table, th, td {
+      border: 0px;
+    }
+    td {
+        text-align:center; 
+        vertical-align:middle;
+      
+    }
+    
+    .pinyin {
+        font-size: 14px;
+    }
+    .word {
+        font-size: 22px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+</style> 
+    ''';
 
     String toHtmlTable(List<_WordData> words, int rowNum){
         String tableContent = '';
@@ -405,25 +515,6 @@ class _ResultView extends StatelessWidget {
         }
 
         String html = '''
-<style>
-    table, th, td {
-      border: 0px;
-    }
-    td {
-        text-align:center; 
-        vertical-align:middle;
-      
-    }
-    
-    .pinyin {
-        font-size: 14px;
-    }
-    .word {
-        font-size: 22px;
-        padding-left: 8px;
-        padding-right: 8px;
-    }
-</style>
 <table>
     <tbody>
         ${tableContent}

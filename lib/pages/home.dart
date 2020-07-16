@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
     @override
     void initState() {
         super.initState();
-        tabType = TabType.About;
+        tabType = TabType.AnkiRead;
     }
 
     @override
