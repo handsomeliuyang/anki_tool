@@ -65,6 +65,21 @@ const COMMON_WORD = {
     '吧': 'bā',
     '服': 'fú',
     '内': 'nèi',
+    '可':'kě',
+    '不': 'bù',
+    '语': 'yǔ',
+    '头':'tóu',
+    '兴':'xìng',
+    '便':'biàn',
+    '空':'kōng',
+    '孙':'sūn',
+    '各':'gè',
+    '并':'bìng',
+    '给':'gěi',
+    '间':'jiān',
+    '识':'shí',
+    '扫':'sǎo',
+    '挑':'tiāo',
 };
 
 class _AnkiReadState extends State<AnkiRead> {
@@ -94,6 +109,9 @@ class _AnkiReadState extends State<AnkiRead> {
     void _genPinyin(){
         final int rowNum = int.parse(rowNumController.text);
         final String content = contentController.text;
+
+        this.words.clear();
+        this.multiWords.clear();
 
         for(int i=0; i<content.length; i++) {
             var char = content[i];
