@@ -80,6 +80,17 @@ const COMMON_WORD = {
     '识':'shí',
     '扫':'sǎo',
     '挑':'tiāo',
+    '与':'yǔ',
+    '同':'tóng',
+    '亲':'qīn',
+    '亡':'wáng',
+    '觉':'jué',
+    '把':'bǎ',
+    '重':'chóng',
+    '拾':'shí',
+    '量':'liàng',
+    '她':'tā',
+    '被':'bèi',
 };
 
 class _AnkiReadState extends State<AnkiRead> {
@@ -292,8 +303,13 @@ class _PinyinView extends StatelessWidget {
 
     @override
     Widget build(BuildContext context) {
-
-        String pinyins = words.map((item) => item.pinyins.join(',')).join(' ');
+        String pinyins = words.map((item) {
+                if(item.pinyins.length == 0) {
+                    return item.word;
+                }
+                return item.pinyins.join(',');
+            })
+            .join(' ');
 
         return Card(
             color: Color(0x03FEFEFE),
