@@ -12,10 +12,65 @@ class AnkiRead extends StatefulWidget {
 
 }
 
+const COMMON_WORD = {
+    '好': 'hǎo',
+    '的': 'de',
+    '大': 'dà',
+    '王': 'wáng',
+    '南': 'nán',
+    '风': 'fēng',
+    '将': 'jiāng',
+    '北': 'běi',
+    '了': 'le',
+    '上': 'shàng',
+    '看': 'kàn',
+    '见': 'jiàn',
+    '有': 'yǒu',
+    '许': 'xǔ',
+    '都': 'dōu',
+    '干': 'gàn',
+    '打': 'dǎ',
+    '蛤': 'gé',
+    '悄': 'qiāo',
+    '地': 'de',
+    '过': 'guò',
+    '没': 'méi',
+    '吓': 'xià',
+    '得': 'de',
+    '那': 'nà',
+    '处': 'chù',
+    '些': 'xiē',
+    '这':'zhè',
+    '从':'cóng',
+    '传':'chuán',
+    '个':'gè',
+    '着':'zhe',
+    '正': 'zhèng',
+    '中': 'zhōng',
+    '解': 'jiě',
+    '台': 'tái',
+    '称': 'chēng',
+    '为': 'wéi',
+    '提': 'tí',
+    '别': 'bié',
+    '远': 'yuǎn',
+    '只': 'zhǐ',
+    '石': 'shí',
+    '约': 'yuē',
+    '尺': 'chǐ',
+    '说': 'shuō',
+    '父': 'fù',
+    '要': 'yào',
+    '呀': 'yā',
+    '吧': 'bā',
+    '服': 'fú',
+    '内': 'nèi',
+};
+
 class _AnkiReadState extends State<AnkiRead> {
 
     List<_WordData> words = [];
-    List<String> multiWords = [];
+    Set<String> multiWords = Set();
     int rowNum = 10;
 
     final rowNumController = TextEditingController();
@@ -40,7 +95,6 @@ class _AnkiReadState extends State<AnkiRead> {
         final int rowNum = int.parse(rowNumController.text);
         final String content = contentController.text;
 
-        List<_WordData> list = [];
         for(int i=0; i<content.length; i++) {
             var char = content[i];
 
@@ -48,18 +102,22 @@ class _AnkiReadState extends State<AnkiRead> {
                 continue ;
             }
 
-            list.add(_WordData(
+            _WordData wordData = _WordData(
                 word: char,
                 pinyins: PinyinHelper.convertToPinyinArray(char, PinyinFormat.WITH_TONE_MARK)
-            ));
-        }
+            );
 
-        multiWords = list
-            .where((element) => element.pinyins.length > 1)
-            .map((wordData) => '${wordData.word}=${wordData.pinyins.join(',')}')
-            .toSet()
-            .toList();
-        this.words = list;
+            this.words.add(wordData);
+            if(wordData.pinyins.length > 1) {
+                multiWords.add('${wordData.word}=${wordData.pinyins.join(',')}');
+
+                String commonPinyin = COMMON_WORD[wordData.word];
+                if(commonPinyin != null && commonPinyin.length>0) {
+                    wordData.pinyins.clear();
+                    wordData.pinyins.add(commonPinyin);
+                }
+            }
+        }
         this.rowNum = rowNum;
         setState(() {});
     }
@@ -241,7 +299,7 @@ class _PinyinView extends StatelessWidget {
                                             .then((dynamic result)=>_showSnackBarOnCopySuccess(context, result))
                                             .catchError((dynamic result)=>_showSnackBarOnCopyFailure(context, result));
                                     },
-                                    child: Text('全部复制'),
+                                    child: Text('复制拼音'),
                                 ),
                             ],
                         ),
@@ -260,7 +318,7 @@ class _PinyinView extends StatelessWidget {
 
 class _MultiPinyinShowView extends StatelessWidget {
 
-    final List<String> multiWords;
+    final Set<String> multiWords;
 
     _MultiPinyinShowView(this.multiWords);
 
@@ -307,7 +365,7 @@ class _MultiPinyinShowView extends StatelessWidget {
                                             .then((dynamic result)=>_showSnackBarOnCopySuccess(context, result))
                                             .catchError((dynamic result)=>_showSnackBarOnCopyFailure(context, result));
                                     },
-                                    child: Text('全部复制'),
+                                    child: Text('复制多音字'),
                                 ),
                             ],
                         ),
@@ -326,7 +384,6 @@ class _MultiPinyinShowView extends StatelessWidget {
 
 class _MutiPinyinView extends StatelessWidget {
 
-//    final List<String> multiWords;
     final List<_WordData> words;
     final TextEditingController mutiPinyinController;
     final VoidCallback onTapUpdateMultiPinyin;
