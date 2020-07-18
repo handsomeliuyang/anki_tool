@@ -91,13 +91,54 @@ const COMMON_WORD = {
     '量':'liàng',
     '她':'tā',
     '被':'bèi',
+    '结': 'jié',
+    '什': 'shén',
+    '么': 'me',
+    '佛': 'fó',
+    '行': 'xíng',
+    '能': 'néng',
+    '长': 'cháng',
+    '跳': 'tiào',
+    '倒': 'dào',
+    '背': 'bèi',
+    '责': 'zé',
+    '分': 'fēn',
+    '当': 'dāng',
+    '假': 'jiǎ',
+    '更': 'gēng',
+    '哈': 'hā',
+    '思': 'sī',
+    '朝': 'cháo',
+    '呢': 'ne',
+    '家': 'jiā',
+    '答': 'dā',
+    '应': 'yìng',
+    '教': 'jiāo',
+    '术': 'shù',
+    '吗': 'ma',
+    '洗': 'xǐ',
+    '化': 'huà',
+    '和': 'hé',
+    '斗': 'dǒu',
+    '会': 'huì',
+    '万': 'wàn',
+    '吵': 'chǎo',
+    '哪': 'nǎ',
+    '弄': 'nòng',
+    '其': 'qí',
+    '且': 'qiě',
+    '任': 'rèn',
+    '何': 'hé',
+    '弟': 'dì',
 };
+
+
 
 class _AnkiReadState extends State<AnkiRead> {
 
-    List<_WordData> words = [];
-    Set<String> multiWords = Set();
-    int rowNum = 10;
+    List<List<_WordData>> _segments = [];
+    Set<String> _multiWords = Set();
+    int rowNum = 16;
 
     final rowNumController = TextEditingController();
     final contentController = TextEditingController();
@@ -106,7 +147,7 @@ class _AnkiReadState extends State<AnkiRead> {
     @override
     void initState() {
         super.initState();
-        rowNumController.text = '10';
+        rowNumController.text = '16';
     }
 
     @override
@@ -121,32 +162,44 @@ class _AnkiReadState extends State<AnkiRead> {
         final int rowNum = int.parse(rowNumController.text);
         final String content = contentController.text;
 
-        this.words.clear();
-        this.multiWords.clear();
+        this._segments.clear();
+        this._multiWords.clear();
 
-        for(int i=0; i<content.length; i++) {
-            var char = content[i];
+        List<String> sections = content.split('\n')
+            .where((element) => element.trim() != '')
+            .toList();
 
-            if(char == ' '){
-                continue ;
-            }
+        for(String section in sections){
+            section = section.trim();
 
-            _WordData wordData = _WordData(
-                word: char,
-                pinyins: PinyinHelper.convertToPinyinArray(char, PinyinFormat.WITH_TONE_MARK)
-            );
+            List<_WordData> words = [];
+            this._segments.add(words);
 
-            this.words.add(wordData);
-            if(wordData.pinyins.length > 1) {
-                multiWords.add('${wordData.word}=${wordData.pinyins.join(',')}');
+            for(int i=0; i<section.length; i++) {
+                var char = section[i];
 
-                String commonPinyin = COMMON_WORD[wordData.word];
-                if(commonPinyin != null && commonPinyin.length>0) {
-                    wordData.pinyins.clear();
-                    wordData.pinyins.add(commonPinyin);
+                if(char == ' '){
+                    continue ;
+                }
+
+                _WordData wordData = _WordData(
+                    word: char,
+                    pinyins: PinyinHelper.convertToPinyinArray(char, PinyinFormat.WITH_TONE_MARK)
+                );
+
+                words.add(wordData);
+                if(wordData.pinyins.length > 1) {
+                    this._multiWords.add('${wordData.word}=${wordData.pinyins.join(',')}');
+
+                    String commonPinyin = COMMON_WORD[wordData.word];
+                    if(commonPinyin != null && commonPinyin.length>0) {
+                        wordData.pinyins.clear();
+                        wordData.pinyins.add(commonPinyin);
+                    }
                 }
             }
         }
+
         this.rowNum = rowNum;
         setState(() {});
     }
@@ -163,15 +216,29 @@ class _AnkiReadState extends State<AnkiRead> {
             .map((list) => _WordData(word:list[0], pinyins:list[1].split(',')))
             .toList();
 
-        words = words.map((item) {
-            for (_WordData data in updateMultiWords) {
-                if (item.word == data.word) {
-                    item.pinyins = data.pinyins;
-                    break;
-                }
-            }
-            return item;
-        }).toList();
+        this._segments = this._segments
+            .map((words) =>
+                words.map((item) {
+                    for (_WordData data in updateMultiWords) {
+                        if (item.word == data.word) {
+                            item.pinyins = data.pinyins;
+                            break;
+                        }
+                    }
+                    return item;
+                }).toList()
+            )
+            .toList();
+
+//        words = words.map((item) {
+//            for (_WordData data in updateMultiWords) {
+//                if (item.word == data.word) {
+//                    item.pinyins = data.pinyins;
+//                    break;
+//                }
+//            }
+//            return item;
+//        }).toList();
         setState(() {});
     }
 
@@ -194,17 +261,17 @@ class _AnkiReadState extends State<AnkiRead> {
                                     onTapGenPinyin: this._genPinyin
                                 ),
                                 const SizedBox(height: 8),
-                                _PinyinView(this.words),
+                                _PinyinView(this._segments),
                                 const SizedBox(height: 8,),
-                                _MultiPinyinShowView(this.multiWords),
+                                _MultiPinyinShowView(this._multiWords),
                                 const SizedBox(height: 8,),
                                 _MutiPinyinView(
-                                    words: this.words,
+                                    segments: this._segments,
                                     mutiPinyinController: this.mutiPinyinController,
                                     onTapUpdateMultiPinyin: this._updateMutilPinyin,
                                 ),
                                 const SizedBox(height: 8),
-                                _ResultView(words: words, rowNum: rowNum,)
+                                _ResultView(segments: this._segments, rowNum: rowNum,)
                             ],
                         ),
                     )
@@ -258,6 +325,8 @@ class _InputView extends StatelessWidget {
                                 labelText: '文章'
                             ),
                             controller: contentController,
+                            minLines: 2,
+                            maxLines: 5,
                         ),
                         const SizedBox(height: 12,),
 
@@ -281,9 +350,9 @@ class _InputView extends StatelessWidget {
 
 class _PinyinView extends StatelessWidget {
 
-    final List<_WordData> words;
+    final List<List<_WordData>> segments;
 
-    _PinyinView(this.words);
+    _PinyinView(this.segments);
 
     void _showSnackBarOnCopySuccess(BuildContext context, dynamic result) {
         Scaffold.of(context).showSnackBar(
@@ -303,13 +372,15 @@ class _PinyinView extends StatelessWidget {
 
     @override
     Widget build(BuildContext context) {
-        String pinyins = words.map((item) {
-                if(item.pinyins.length == 0) {
+        StringBuffer buffer = StringBuffer();
+        String pinyins = segments.map((words) =>
+            words.map((item) {
+                if (item.pinyins.length == 0) {
                     return item.word;
                 }
                 return item.pinyins.join(',');
-            })
-            .join(' ');
+            }).join(' '))
+            .join('\n');
 
         return Card(
             color: Color(0x03FEFEFE),
@@ -418,12 +489,13 @@ class _MultiPinyinShowView extends StatelessWidget {
 
 class _MutiPinyinView extends StatelessWidget {
 
-    final List<_WordData> words;
+//    final List<_WordData> words;
+    final List<List<_WordData>> segments;
     final TextEditingController mutiPinyinController;
     final VoidCallback onTapUpdateMultiPinyin;
 
     _MutiPinyinView({
-        this.words,
+        this.segments,
         this.mutiPinyinController,
         this.onTapUpdateMultiPinyin
     });
@@ -431,11 +503,17 @@ class _MutiPinyinView extends StatelessWidget {
     @override
     Widget build(BuildContext context) {
 
-        mutiPinyinController.text = words
-            .where((element) => element.pinyins.length > 1)
-            .map((wordData) => '${wordData.word}=${wordData.pinyins.join(',')}')
-            .toSet()
-            .join('\n');
+        Set<String> multiSet = Set();
+
+        for(List<_WordData> words in segments){
+            multiSet.addAll(words
+                .where((element) => element.pinyins.length > 1)
+                .map((wordData) => '${wordData.word}=${wordData.pinyins.join(
+                ',')}')
+                .toSet());
+        }
+
+        mutiPinyinController.text = multiSet.join('\n');
 
         return Card(
             color: Color(0x03FEFEFE),
@@ -469,11 +547,11 @@ class _MutiPinyinView extends StatelessWidget {
 
 class _ResultView extends StatelessWidget {
 
-    final List<_WordData> words;
+    final List<List<_WordData>> segments;
     final int rowNum;
 
     _ResultView({
-        this.words,
+        this.segments,
         this.rowNum
     });
 
@@ -495,8 +573,17 @@ class _ResultView extends StatelessWidget {
 
     @override
     Widget build(BuildContext context) {
+        String htmlTable = this.segments
+            .map((words) {
+                List<_WordData> list = [];
+                list.add(_WordData(word:'　', pinyins: []));
+                list.add(_WordData(word:'　', pinyins: []));
+                list.addAll(words);
+                return list;
+            })
+            .map((words) => toHtmlTable(words, rowNum))
+            .join('\n');
 
-        String htmlTable = toHtmlTable(words, rowNum);
         String htmlTableAndStyle = style + '\n' + htmlTable;
 
         return Card(
@@ -629,4 +716,11 @@ class _WordData {
         this.word,
         this.pinyins
     });
+
+    @override
+    String toString() {
+        return '_WordData{word: $word, pinyins: $pinyins}';
+    }
+
+
 }
