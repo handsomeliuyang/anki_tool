@@ -130,8 +130,19 @@ const COMMON_WORD = {
     '任': 'rèn',
     '何': 'hé',
     '弟': 'dì',
+    '种': 'zhòng',
+    '卜': 'bo',
+    '累': 'lèi',
+    '汗': 'hàn',
+    '跑': 'pǎo',
+    '旁': 'páng',
+    '啊': 'ā',
+    '数': 'shǔ',
+    '参': 'cān',
+    '待': 'dài',
+    '混': 'hùn',
+    '底': 'dǐ',
 };
-
 
 
 class _AnkiReadState extends State<AnkiRead> {
