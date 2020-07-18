@@ -150,6 +150,7 @@ class _AnkiReadState extends State<AnkiRead> {
     List<List<_WordData>> _segments = [];
     Set<String> _multiWords = Set();
     int rowNum = 16;
+    bool hasIndent = true;
 
     final rowNumController = TextEditingController();
     final contentController = TextEditingController();
@@ -240,16 +241,11 @@ class _AnkiReadState extends State<AnkiRead> {
                 }).toList()
             )
             .toList();
+        setState(() {});
+    }
 
-//        words = words.map((item) {
-//            for (_WordData data in updateMultiWords) {
-//                if (item.word == data.word) {
-//                    item.pinyins = data.pinyins;
-//                    break;
-//                }
-//            }
-//            return item;
-//        }).toList();
+    void _hasIndentChanged(bool hasIndent){
+        this.hasIndent = hasIndent;
         setState(() {});
     }
 
@@ -269,7 +265,10 @@ class _AnkiReadState extends State<AnkiRead> {
                                 _InputView(
                                     rowNumController: this.rowNumController,
                                     contentController: this.contentController,
-                                    onTapGenPinyin: this._genPinyin
+                                    onTapGenPinyin: this._genPinyin,
+
+                                    hasIndent: this.hasIndent,
+                                    onHasIndentChanged: this._hasIndentChanged,
                                 ),
                                 const SizedBox(height: 8),
                                 _PinyinView(this._segments),
@@ -282,7 +281,11 @@ class _AnkiReadState extends State<AnkiRead> {
                                     onTapUpdateMultiPinyin: this._updateMutilPinyin,
                                 ),
                                 const SizedBox(height: 8),
-                                _ResultView(segments: this._segments, rowNum: rowNum,)
+                                _ResultView(
+                                    segments: this._segments,
+                                    rowNum: rowNum,
+                                    hasIndent: this.hasIndent
+                                )
                             ],
                         ),
                     )
@@ -298,10 +301,16 @@ class _InputView extends StatelessWidget {
     final TextEditingController contentController;
     final VoidCallback onTapGenPinyin;
 
+    final bool hasIndent;
+    final ValueChanged<bool> onHasIndentChanged;
+
     _InputView({
-        this.rowNumController,
-        this.contentController,
-        this.onTapGenPinyin
+        @ required this.rowNumController,
+        @ required this.contentController,
+        @ required this.onTapGenPinyin,
+
+        @ required this.hasIndent,
+        @ required this.onHasIndentChanged
     });
 
     @override
@@ -338,6 +347,14 @@ class _InputView extends StatelessWidget {
                             controller: contentController,
                             minLines: 2,
                             maxLines: 5,
+                        ),
+                        const SizedBox(height: 12,),
+
+                        new CheckboxListTile(
+                            secondary: const Icon(Icons.shutter_speed),
+                            title: const Text('添加缩进'),
+                            value: this.hasIndent,
+                            onChanged: this.onHasIndentChanged
                         ),
                         const SizedBox(height: 12,),
 
@@ -560,10 +577,12 @@ class _ResultView extends StatelessWidget {
 
     final List<List<_WordData>> segments;
     final int rowNum;
+    final bool hasIndent;
 
     _ResultView({
         this.segments,
-        this.rowNum
+        this.rowNum,
+        this.hasIndent
     });
 
     void _showSnackBarOnCopySuccess(BuildContext context, dynamic result) {
@@ -586,6 +605,9 @@ class _ResultView extends StatelessWidget {
     Widget build(BuildContext context) {
         String htmlTable = this.segments
             .map((words) {
+                if(!hasIndent) {
+                    return words;
+                }
                 List<_WordData> list = [];
                 list.add(_WordData(word:'　', pinyins: []));
                 list.add(_WordData(word:'　', pinyins: []));
